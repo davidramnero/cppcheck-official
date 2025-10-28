@@ -39,8 +39,13 @@ function parseMinSeverity(str: string): SeverityNumber {
 export function activate(context: vscode.ExtensionContext) {
 
     // Create a diagnostic collection.
-    const diagnosticCollection = vscode.languages.createDiagnosticCollection("Cppcheck Lite");
+    const diagnosticCollection = vscode.languages.createDiagnosticCollection("Cppcheck");
     context.subscriptions.push(diagnosticCollection);
+    
+    // set up a map of timers per document URI for debounce for continuous analysis triggers
+    // I.e. document has been changed -> DEBOUNCE_MS time passed since last change -> run cppcheck
+    const debounceTimers: Map<string, NodeJS.Timeout> = new Map();
+    const DEBOUNCE_MS = 1000;
 
     async function handleDocument(document: vscode.TextDocument) {
         // Only process C/C++ files.
@@ -58,11 +63,11 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         const config = vscode.workspace.getConfiguration();
-        const isEnabled = config.get<boolean>("cppcheck-lite.enable", true);
-        const extraArgs = config.get<string>("cppcheck-lite.arguments", "");
-        const minSevString = config.get<string>("cppcheck-lite.minSeverity", "info");
-        const standard = config.get<string>("cppcheck-lite.standard", "c++17");
-        const userPath = config.get<string>("cppcheck-lite.path")?.trim() || "";
+        const isEnabled = config.get<boolean>("cppcheck-vscode.enable", true);
+        const extraArgs = config.get<string>("cppcheck-vscode.arguments", "");
+        const minSevString = config.get<string>("cppcheck-vscode.minSeverity", "info");
+        const standard = config.get<string>("cppcheck-vscode.standard", "c++17");
+        const userPath = config.get<string>("cppcheck-vscode.path")?.trim() || "";
         const commandPath = userPath ? userPath : "cppcheck";
 
         // If disabled, clear any existing diagnostics for this doc.
@@ -75,8 +80,8 @@ export function activate(context: vscode.ExtensionContext) {
         cp.exec(`"${commandPath}" --version`, (error) => {
             if (error) {
                 vscode.window.showErrorMessage(
-                    `Cppcheck Lite: Could not find or run '${commandPath}'. ` +
-                    `Please install cppcheck or set 'cppcheck-lite.path' correctly.`
+                    `Cppcheck: Could not find or run '${commandPath}'. ` +
+                    `Please install cppcheck or set 'cppcheck-vscode.path' correctly.`
                 );
                 return;
             }
@@ -91,6 +96,26 @@ export function activate(context: vscode.ExtensionContext) {
             diagnosticCollection
         );
     }
+
+    async function handleDocumentContinuous(e: vscode.TextDocumentChangeEvent) {
+        const document : vscode.TextDocument = e.document;
+        const uriKey = document.uri.toString();
+
+        // clear any existing timer for this document
+        if (debounceTimers.has(uriKey)) {
+            clearTimeout(debounceTimers.get(uriKey)!);
+        }
+
+        // schedule a new run
+        const timer = setTimeout(async () => {
+            debounceTimers.delete(uriKey);
+            await handleDocument(document);
+        }, DEBOUNCE_MS);
+        debounceTimers.set(uriKey, timer);
+    }
+
+    // Run cppcheck when document is changed, with debounce
+    vscode.workspace.onDidChangeTextDocument(handleDocumentContinuous, null, context.subscriptions);
 
     // Listen for file saves.
     vscode.workspace.onDidSaveTextDocument(handleDocument, null, context.subscriptions);

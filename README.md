@@ -1,6 +1,6 @@
-# Cppcheck Lite
+# Cppcheck VSCode
 
-**Cppcheck Lite** is a minimalistic Visual Studio Code extension that runs [cppcheck](https://cppcheck.sourceforge.net/) against C/C++ files upon save and reports any warnings or errors in the Problems panel.
+**Cppcheck VSCode** is a Visual Studio Code extension that runs [cppcheck](https://cppcheck.sourceforge.net/) against C/C++ files continuously.
 
 ## Features
 
@@ -32,8 +32,10 @@ This extension contributes the following settings under `cppcheck-lite.*`:
 - **`cppcheck-lite.path`**: (string) Path to the `cppcheck` executable. If left empty, `cppcheck` from the system PATH is used.
 
 ## Reporting Issues
-Please submit any issues or feature requests via the [GitHub Issues page](https://github.com/JustusRijke/Cppcheck-Lite/issues).
+-
 
+
+## Acknowledgements
+This plugin is forked from the plugin cppcheck-lite by JustusRijke (https://github.com/JustusRijke/Cppcheck-Lite).
 ---
 
-**Enjoy using Cppcheck Lite!**
