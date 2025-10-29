@@ -14,7 +14,7 @@
 
  **Cppcheck** must be installed on your system.  
   - By default, this extension looks for `cppcheck` on the system PATH.
-  - Alternatively, specify a custom executable path using the `cppcheck-lite.path` setting.
+  - Alternatively, specify a custom executable path using the `cppcheck-vscode.path` setting.
 
 Examples of installing Cppcheck:
   - On Linux (Debian/Ubuntu), install via `sudo apt-get install cppcheck`.
@@ -23,19 +23,17 @@ Examples of installing Cppcheck:
 
 ## Extension Settings
 
-This extension contributes the following settings under `cppcheck-lite.*`:
+This extension contributes the following settings under `cppcheck-vscode.*`:
 
-- **`cppcheck-lite.enable`**: (boolean) Enable or disable the extension.  
-- **`cppcheck-lite.minSeverity`**: (string) Minimum severity to report (`info`, `warning`, or `error`).  `info` shows style, performance, portability and information messages.
-- **`cppcheck-lite.standard`**: (string) Sets the C/C++ standard with `--std=<id>` (e.g. `c11`, `c++17`).
-- **`cppcheck-lite.arguments`**: (string) Additional [command line arguments](https://cppcheck.sourceforge.io/manual.pdf?#page=5) to pass to `cppcheck`.  
-- **`cppcheck-lite.path`**: (string) Path to the `cppcheck` executable. If left empty, `cppcheck` from the system PATH is used.
+- **`cppcheck-vscode.enable`**: (boolean) Enable or disable the extension.  
+- **`cppcheck-vscode.minSeverity`**: (string) Minimum severity to report (`info`, `warning`, or `error`).  `info` shows style, performance, portability and information messages.
+- **`cppcheck-vscode.standard`**: (string) Sets the C/C++ standard with `--std=<id>` (e.g. `c11`, `c++17`).
+- **`cppcheck-vscode.arguments`**: (string) Additional [command line arguments](https://cppcheck.sourceforge.io/manual.pdf?#page=5) to pass to `cppcheck`.  
+- **`cppcheck-vscode.path`**: (string) Path to the `cppcheck` executable. If left empty, `cppcheck` from the system PATH is used.
 
 ## Reporting Issues
 -
 
 
 ## Acknowledgements
-This plugin is forked from the plugin cppcheck-lite by JustusRijke (https://github.com/JustusRijke/Cppcheck-Lite).
----
-
+This plugin is forked from the plugin cppcheck-lite by Justus Rijke (https://github.com/JustusRijke/Cppcheck-Lite).

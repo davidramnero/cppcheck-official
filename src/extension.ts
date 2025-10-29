@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import { randomUUID } from 'crypto';
 
 enum SeverityNumber {
     Info = 0,
@@ -87,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
 
-        await runCppcheck(
+        await runCppcheckTextBuffer(
             document,
             commandPath,
             extraArgs,
@@ -156,8 +160,10 @@ async function runCppcheck(
     console.log("Cppcheck command:", command);
 
     cp.exec(command, (error, stdout, stderr) => {
+        console.log('cp.exec command :: ', command, error, stdout, stderr);
         if (error) {
-            vscode.window.showErrorMessage(`Cppcheck Lite: ${error.message}`);
+            console.log('show error message');
+            vscode.window.showErrorMessage(`Cppcheck: ${error.message}`);
             return;
         }
 
@@ -192,8 +198,80 @@ async function runCppcheck(
 
             diagnostics.push(diagnostic);
         }
+        console.log('match', match);
 
         diagnosticCollection.set(document.uri, diagnostics);
+    });
+}
+
+async function runCppcheckTextBuffer(
+    document: vscode.TextDocument,
+    commandPath: string,
+    extraArgs: string,
+    minSevString: string,
+    standard: string,
+    diagnosticCollection: vscode.DiagnosticCollection
+): Promise<void> {
+    // Clear existing diagnostics for this file
+    diagnosticCollection.delete(document.uri);
+
+    const filePath = document.fileName;
+    const minSevNum = parseMinSeverity(minSevString);
+    const standardArg = standard !== "<none>" ? `--std=${standard}` : "";
+
+    // Save buffer to temp file, for passing to cppcheck
+    const textBuffer = document.getText();
+    const tmpPath = path.join(os.tmpdir(), "cppcheck-" + randomUUID() + ".cpp");
+    fs.writeFileSync(tmpPath, document.getText(), "utf8");
+
+    const args = [
+        standardArg,
+        ...extraArgs.split(" "),   // split if extraArgs is a string
+        tmpPath.replace(/\\/g, '/')
+    ].filter(Boolean); // remove empty strings
+
+    const proc = cp.spawn(commandPath, args);
+
+    proc.stdin.write(textBuffer);
+    proc.stdin.end();
+
+    let out = "";
+    let err = "";
+
+    proc.stdout.on("data", d => out += d.toString());
+    proc.stderr.on("data", d => err += d.toString());
+
+    proc.on("close", code => {
+        const allOutput = out + "\n" + err;
+        console.log('allOutput', allOutput)
+        const diagnostics: vscode.Diagnostic[] = [];
+        const regex = /^(.*?):(\d+):(\d+):\s*(error|warning|style|performance|information|info|note):\s*(.*)$/gm;
+        let match;
+        while ((match = regex.exec(allOutput)) !== null) {
+            const [, file, lineStr, colStr, severityStr, message] = match;
+            const line = parseInt(lineStr, 10) - 1;
+            const col = parseInt(colStr, 10);
+            const diagSeverity = parseSeverity(severityStr);
+
+            // Filter out if severity is less than our minimum
+            if (severityToNumber(diagSeverity) < minSevNum) {
+                continue;
+            }
+
+            // Only show diagnostics for the current file
+            if (!filePath.endsWith(file)) {
+                continue;
+            }
+
+            const range = new vscode.Range(line, col, line, col);
+            const diagnostic = new vscode.Diagnostic(range, message, diagSeverity);
+            diagnostic.code = standard !== "<none>" ? standard : "";
+
+            diagnostics.push(diagnostic);
+        }
+        diagnosticCollection.set(document.uri, diagnostics);
+        // Clean up temp file
+        fs.unlink(tmpPath, () => {});
     });
 }
 
