@@ -141,69 +141,6 @@ export function activate(context: vscode.ExtensionContext) {
     }, null, context.subscriptions);
 }
 
-async function runCppcheck(
-    document: vscode.TextDocument,
-    commandPath: string,
-    extraArgs: string,
-    minSevString: string,
-    standard: string,
-    diagnosticCollection: vscode.DiagnosticCollection
-): Promise<void> {
-    // Clear existing diagnostics for this file
-    diagnosticCollection.delete(document.uri);
-
-    const filePath = document.fileName;
-    const minSevNum = parseMinSeverity(minSevString);
-    const standardArg = standard !== "<none>" ? `--std=${standard}` : "";
-    const command = `"${commandPath}" ${standardArg} ${extraArgs} "${filePath.replace(/\\/g, '/')}"`.trim();
-
-    console.log("Cppcheck command:", command);
-
-    cp.exec(command, (error, stdout, stderr) => {
-        console.log('cp.exec command :: ', command, error, stdout, stderr);
-        if (error) {
-            console.log('show error message');
-            vscode.window.showErrorMessage(`Cppcheck: ${error.message}`);
-            return;
-        }
-
-        const allOutput = stdout + "\n" + stderr;
-        const diagnostics: vscode.Diagnostic[] = [];
-
-        // Example lines we might see:
-        //   file.cpp:6:1: error: Something [id]
-        //   file.cpp:14:2: warning: Something else [id]
-        const regex = /^(.*?):(\d+):(\d+):\s*(error|warning|style|performance|information|info|note):\s*(.*)$/gm;
-
-        let match;
-        while ((match = regex.exec(allOutput)) !== null) {
-            const [, file, lineStr, colStr, severityStr, message] = match;
-            const line = parseInt(lineStr, 10) - 1;
-            const col = parseInt(colStr, 10);
-            const diagSeverity = parseSeverity(severityStr);
-
-            // Filter out if severity is less than our minimum
-            if (severityToNumber(diagSeverity) < minSevNum) {
-                continue;
-            }
-
-            // Only show diagnostics for the current file
-            if (!filePath.endsWith(file)) {
-                continue;
-            }
-
-            const range = new vscode.Range(line, col, line, col);
-            const diagnostic = new vscode.Diagnostic(range, message, diagSeverity);
-            diagnostic.code = standard !== "<none>" ? standard : "";
-
-            diagnostics.push(diagnostic);
-        }
-        console.log('match', match);
-
-        diagnosticCollection.set(document.uri, diagnostics);
-    });
-}
-
 async function runCppcheckTextBuffer(
     document: vscode.TextDocument,
     commandPath: string,
@@ -226,9 +163,9 @@ async function runCppcheckTextBuffer(
 
     const args = [
         standardArg,
-        ...extraArgs.split(" "),   // split if extraArgs is a string
+        ...extraArgs.split(" "),
         tmpPath.replace(/\\/g, '/')
-    ].filter(Boolean); // remove empty strings
+    ].filter(Boolean);
 
     const proc = cp.spawn(commandPath, args);
 
@@ -241,13 +178,11 @@ async function runCppcheckTextBuffer(
     proc.stdout.on("data", d => out += d.toString());
     proc.stderr.on("data", d => err += d.toString());
 
-    proc.on("close", code => {
-        const allOutput = out + "\n" + err;
-        console.log('allOutput', allOutput)
+    proc.on("close", c => {
         const diagnostics: vscode.Diagnostic[] = [];
         const regex = /^(.*?):(\d+):(\d+):\s*(error|warning|style|performance|information|info|note):\s*(.*)$/gm;
         let match;
-        while ((match = regex.exec(allOutput)) !== null) {
+        while ((match = regex.exec(err)) !== null) {
             const [, file, lineStr, colStr, severityStr, message] = match;
             const line = parseInt(lineStr, 10) - 1;
             const col = parseInt(colStr, 10);
@@ -258,13 +193,14 @@ async function runCppcheckTextBuffer(
                 continue;
             }
 
-            // Only show diagnostics for the current file
-            if (!filePath.endsWith(file)) {
-                continue;
-            }
+            // TODO: Reimplement this somehow (?)
+            // // Only show diagnostics for the current file
+            // if (!filePath.endsWith(file)) {
+            //     continue;
+            // }
 
             const range = new vscode.Range(line, col, line, col);
-            const diagnostic = new vscode.Diagnostic(range, message, diagSeverity);
+            const diagnostic = new vscode.Diagnostic(range, `cppcheck: ${message}`, diagSeverity);
             diagnostic.code = standard !== "<none>" ? standard : "";
 
             diagnostics.push(diagnostic);
