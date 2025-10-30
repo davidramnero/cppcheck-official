@@ -169,6 +169,12 @@ async function runCppcheckTextBuffer(
 
     const proc = cp.spawn(commandPath, args);
 
+    // if spawn fails (e.g. ENOENT or permission denied)
+    proc.on("error", (err) => {
+        console.error("Failed to start cppcheck:", err);
+        vscode.window.showErrorMessage(`Cppcheck failed to start: ${err.message}`);
+    });
+
     proc.stdin.write(textBuffer);
     proc.stdin.end();
 
@@ -178,34 +184,39 @@ async function runCppcheckTextBuffer(
     proc.stdout.on("data", d => out += d.toString());
     proc.stderr.on("data", d => err += d.toString());
 
-    proc.on("close", c => {
-        const diagnostics: vscode.Diagnostic[] = [];
-        const regex = /^(.*?):(\d+):(\d+):\s*(error|warning|style|performance|information|info|note):\s*(.*)$/gm;
-        let match;
-        while ((match = regex.exec(err)) !== null) {
-            const [, file, lineStr, colStr, severityStr, message] = match;
-            const line = parseInt(lineStr, 10) - 1;
-            const col = parseInt(colStr, 10);
-            const diagSeverity = parseSeverity(severityStr);
+    proc.on("close", code => {
+        if (code !== 0) {
+            console.error(`cppcheck exited with code ${code}`, err, out);
+            vscode.window.showErrorMessage(`${err.trim()} ${out.trim()}`);
+        } else {
+            const diagnostics: vscode.Diagnostic[] = [];
+            const regex = /^(.*?):(\d+):(\d+):\s*(error|warning|style|performance|information|info|note):\s*(.*)$/gm;
+            let match;
+            while ((match = regex.exec(err)) !== null) {
+                const [, file, lineStr, colStr, severityStr, message] = match;
+                const line = parseInt(lineStr, 10) - 1;
+                const col = parseInt(colStr, 10);
+                const diagSeverity = parseSeverity(severityStr);
 
-            // Filter out if severity is less than our minimum
-            if (severityToNumber(diagSeverity) < minSevNum) {
-                continue;
+                // Filter out if severity is less than our minimum
+                if (severityToNumber(diagSeverity) < minSevNum) {
+                    continue;
+                }
+
+                // TODO: Reimplement this somehow (?)
+                // // Only show diagnostics for the current file
+                // if (!filePath.endsWith(file)) {
+                //     continue;
+                // }
+
+                const range = new vscode.Range(line, col, line, col);
+                const diagnostic = new vscode.Diagnostic(range, `cppcheck: ${message}`, diagSeverity);
+                diagnostic.code = standard !== "<none>" ? standard : "";
+
+                diagnostics.push(diagnostic);
             }
-
-            // TODO: Reimplement this somehow (?)
-            // // Only show diagnostics for the current file
-            // if (!filePath.endsWith(file)) {
-            //     continue;
-            // }
-
-            const range = new vscode.Range(line, col, line, col);
-            const diagnostic = new vscode.Diagnostic(range, `cppcheck: ${message}`, diagSeverity);
-            diagnostic.code = standard !== "<none>" ? standard : "";
-
-            diagnostics.push(diagnostic);
+            diagnosticCollection.set(document.uri, diagnostics);
         }
-        diagnosticCollection.set(document.uri, diagnostics);
         // Clean up temp file
         fs.unlink(tmpPath, () => {});
     });
