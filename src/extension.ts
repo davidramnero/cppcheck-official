@@ -38,6 +38,34 @@ function parseMinSeverity(str: string): SeverityNumber {
     }
 }
 
+export function resolvePath(argPath: string): string {
+    const folders = vscode.workspace.workspaceFolders;
+    const workspaceRoot = folders && folders.length > 0
+        ? folders[0].uri.fsPath
+        : process.cwd();
+
+    // Expand ${workspaceFolder}
+    if (argPath.includes("${workspaceFolder}")) {
+        argPath = argPath.replace("${workspaceFolder}", workspaceRoot);
+    }
+
+    // Expand tilde (~) to home directory
+    if (argPath.startsWith("~")) {
+        argPath = path.join(os.homedir(), argPath.slice(1));
+    }
+
+    // Expand ./ or ../ relative paths (relative to workspace root if available)
+    if (argPath.startsWith("./") || argPath.startsWith("../")) {
+        argPath = path.resolve(workspaceRoot, argPath);
+    }
+
+    // If still not absolute, treat it as relative to workspace root
+    if (!path.isAbsolute(argPath)) {
+        argPath = path.join(workspaceRoot, argPath);
+    }
+    return argPath;
+}
+
 // This method is called when your extension is activated.
 // Your extension is activated the very first time the command is executed.
 export function activate(context: vscode.ExtensionContext) {
@@ -56,7 +84,6 @@ export function activate(context: vscode.ExtensionContext) {
         if (!["c", "cpp"].includes(document.languageId)) {
             // Not a C/C++ file, skip
             return;
-
         }
 
         // Check if the document is visible in any editor
@@ -72,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
         const minSevString = config.get<string>("cppcheck-vscode.minSeverity", "info");
         const standard = config.get<string>("cppcheck-vscode.standard", "c++17");
         const userPath = config.get<string>("cppcheck-vscode.path")?.trim() || "";
-        const commandPath = userPath ? userPath : "cppcheck";
+        const commandPath = userPath ? resolvePath(userPath) : "cppcheck";
 
         // If disabled, clear any existing diagnostics for this doc.
         if (!isEnabled) {
@@ -161,9 +188,18 @@ async function runCppcheckTextBuffer(
     const tmpPath = path.join(os.tmpdir(), "cppcheck-" + randomUUID() + ".cpp");
     fs.writeFileSync(tmpPath, document.getText(), "utf8");
 
+    // Resolve paths for arguments where applicable
+    const extraArgsParsed = (extraArgs.split(" ")).map((arg) => {
+        if (arg.startsWith('--project')) {
+            const splitArg = arg.split('=');
+            return `${splitArg[0]}=${resolvePath(splitArg[1])}`;
+        }
+        return arg;
+    });
+
     const args = [
         standardArg,
-        ...extraArgs.split(" "),
+        ...extraArgsParsed,
         tmpPath.replace(/\\/g, '/')
     ].filter(Boolean);
 
@@ -183,9 +219,9 @@ async function runCppcheckTextBuffer(
 
     proc.stdout.on("data", d => out += d.toString());
     proc.stderr.on("data", d => err += d.toString());
-
     proc.on("close", code => {
         if (code !== 0) {
+            // Non-zero code means an error has occured
             console.error(`cppcheck exited with code ${code}`, err, out);
             vscode.window.showErrorMessage(`${err.trim()} ${out.trim()}`);
         } else {
