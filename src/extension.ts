@@ -203,8 +203,6 @@ async function runCppcheckTextBuffer(
         ...extraArgsParsed,
         tmpPath.replace(/\\/g, '/')
     ].filter(Boolean);
-    console.log('commandPath', commandPath);
-    console.log('args', args);
     const proc = cp.spawn(commandPath, args);
 
     // if spawn fails (e.g. ENOENT or permission denied)
