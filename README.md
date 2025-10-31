@@ -1,6 +1,6 @@
-# Cppcheck VSCode
+# Cppcheck Official
 
-**Cppcheck VSCode** is a Visual Studio Code extension that runs [cppcheck](https://cppcheck.sourceforge.net/) against C/C++ files continuously.
+**Cppcheck Official** is a Visual Studio Code extension that runs [cppcheck](https://cppcheck.sourceforge.net/) against C/C++ files continuously. Supported by the Cppcheck team.
 
 ## Features
 
@@ -23,13 +23,13 @@ Examples of installing Cppcheck:
 
 ## Extension Settings
 
-This extension contributes the following settings under `cppcheck-vscode.*`:
+This extension contributes the following settings under `cppcheck-official.*`:
 
-- **`cppcheck-vscode.enable`**: (boolean) Enable or disable the extension.  
-- **`cppcheck-vscode.minSeverity`**: (string) Minimum severity to report (`info`, `warning`, or `error`).  `info` shows style, performance, portability and information messages.
-- **`cppcheck-vscode.standard`**: (string) Sets the C/C++ standard with `--std=<id>` (e.g. `c11`, `c++17`).
-- **`cppcheck-vscode.arguments`**: (string) Additional [command line arguments](https://cppcheck.sourceforge.io/manual.pdf?#page=5) to pass to `cppcheck`.  
-- **`cppcheck-vscode.path`**: (string) Path to the `cppcheck` executable. If left empty, `cppcheck` from the system PATH is used.
+- **`cppcheck-official.enable`**: (boolean) Enable or disable the extension.  
+- **`cppcheck-official.minSeverity`**: (string) Minimum severity to report (`info`, `warning`, or `error`).  `info` shows style, performance, portability and information messages.
+- **`cppcheck-official.standard`**: (string) Sets the C/C++ standard with `--std=<id>` (e.g. `c11`, `c++17`).
+- **`cppcheck-official.arguments`**: (string) Additional [command line arguments](https://cppcheck.sourceforge.io/manual.pdf?#page=5) to pass to `cppcheck`.  
+- **`cppcheck-official.path`**: (string) Path to the `cppcheck` executable. If left empty, `cppcheck` from the system PATH is used.
 
 ## Reporting Issues
 -

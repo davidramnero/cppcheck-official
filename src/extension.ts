@@ -249,8 +249,12 @@ async function runCppcheckTextBuffer(
 
                 // clamp column into valid range for that line
                 const lineText = document.lineAt(line).text;
-                if (isNaN(col) || col < 0) {col = 0;}
-                if (col > lineText.length) {col = Math.max(0, lineText.length - 1);}
+                if (isNaN(col) || col < 0) {
+                    col = 0;
+                }
+                if (col > lineText.length) {
+                    col = Math.max(0, lineText.length - 1);
+                }
                 // produce an end column that covers at least one character (avoids zero-length nonsense)
                 const endCol = Math.min(lineText.length, col + 1);
 

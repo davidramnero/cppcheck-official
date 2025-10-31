@@ -1,7 +1,7 @@
 {
-  "name": "cppcheck-vscode",
-  "displayName": "Cppcheck VSCode",
-  "description": "A Visual Studio Code extension that runs cppcheck on C/C++ files continuously.",
+  "name": "cppcheck-official",
+  "displayName": "Cppcheck Official",
+  "description": "A Visual Studio Code extension that runs cppcheck on C/C++ files continuously. Supported by the Cppcheck team.",
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.96.0"
@@ -38,12 +38,12 @@
         "title": "Cppcheck (General)",
         "order": 1,
         "properties": {
-          "cppcheck-vscode.enable": {
+          "cppcheck-official.enable": {
             "type": "boolean",
             "default": true,
             "description": "Enable or disable the Cppcheck extension."
           },
-          "cppcheck-vscode.minSeverity": {
+          "cppcheck-official.minSeverity": {
             "type": "string",
             "enum": [
               "info",
@@ -53,7 +53,7 @@
             "default": "info",
             "description": "Minimum severity of issues to report (info, warning, or error)."
           },
-          "cppcheck-vscode.standard": {
+          "cppcheck-official.standard": {
             "type": "string",
             "enum": [
               "<none>",
@@ -75,12 +75,12 @@
         "title": "Cppcheck (Advanced)",
         "order": 2,
         "properties": {
-          "cppcheck-vscode.path": {
+          "cppcheck-official.path": {
             "type": "string",
             "default": "",
             "description": "Path to the cppcheck executable. If empty, uses 'cppcheck' from the system PATH."
           },
-          "cppcheck-vscode.arguments": {
+          "cppcheck-official.arguments": {
             "type": "string",
             "default": "",
             "description": "Additional command line arguments for cppcheck."
