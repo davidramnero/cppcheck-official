@@ -1,15 +1,16 @@
 # Cppcheck Official
 
-**Cppcheck Official** is a minimalistic Visual Studio Code extension that runs [cppcheck](https://cppcheck.sourceforge.net/) against C/C++ files upon save and reports any warnings or errors in the Problems panel.
+**Cppcheck Official** is a Visual Studio Code extension that runs [cppcheck](https://cppcheck.sourceforge.io/) against C/C++ files upon save and reports any warnings or errors in the Problems panel.
 
 ## Features
 
 - **On-save linting**: When you save a c/cpp file, `cppcheck` is automatically run on that file.
 - **Per-file diagnostics**: Only diagnostics relevant to the saved file are displayed.
 - **Configurable severity threshold**: Filter out messages below a chosen severity level (`info`, `warning`, or `error`).
-- **Set C/C++ standard**: Easily specify `--std=<id>` (e.g. `c++17`, `c99`, etc.).
 - **Diagnostic cleanup**: When you close a file, its diagnostics are automatically cleared.
 - **Project file support**: You can feed your project file to cppcheck through the `--project` flag in the `cppcheck-official.arguments` field in the extension settings.
+- **Multiple locations**: Supports warnings with multiple locations
+
 ## Requirements
 
  **Cppcheck** must be installed on your system.  
@@ -19,7 +20,7 @@
 Examples of installing Cppcheck:
   - On Linux (Debian/Ubuntu), install via `sudo apt-get install cppcheck`.
   - On macOS with Homebrew: `brew install cppcheck`.
-  - On Windows, install from [cppcheck's website](https://cppcheck.sourceforge.net/).
+  - On Windows, install from [cppcheck's website](https://cppcheck.sourceforge.io/).
 
 ## Extension Settings
 
